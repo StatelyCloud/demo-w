@@ -97,3 +97,14 @@ func (c *Client) GetLeasesForResource(ctx context.Context, resourceID uuid.UUID)
 	}
 	return leases, nil
 }
+
+func (c *Client) GetUserByEmail(ctx context.Context, email string) (*schema.User, error) {
+	user, err := c.client.Get(ctx, "/user_email-"+stately.ToKeyID(email))
+	if err != nil {
+		return nil, err
+	}
+	if user != nil {
+		return user.(*schema.User), nil
+	}
+	return nil, nil
+}

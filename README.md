@@ -48,3 +48,11 @@ go mod tidy
 
 See the code in `pkg/client`. This implements some business logic around managing leases.
 
+As a comparison we've also implemented a similar client in `pkg/ddb` that does the same thing directly in DDB. Note:
+
+* It's much more code than the StatelyDB example. You need to write your own domain models and map them to DDB attributes.
+* Single-table design is tricky to get right and the code is hard to understand, thanks to reuse of key names.
+* This version doesn't have quite the same flexibility as the StatelyDB version - it uses GSIs to handle the alternate lookups, but doesn't put in place all the GSIs you might need.
+* This version doesn't properly track createdAt and lastModifiedAt times.
+* Validation needs to happen on the client side, since there's no schema to enforce shape.
+* In the StatelyDB version, we enforce uniqueness of user by email - in the DDB version this is very difficult to do.
