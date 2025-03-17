@@ -2,7 +2,7 @@
 // protoc-gen-go-vtproto version:
 // source: schema.proto
 
-package v1
+package schema
 
 import (
 	"fmt"

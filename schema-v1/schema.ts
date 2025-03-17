@@ -1,13 +1,22 @@
 // Define your StatelyDB schema in this file!
 // Check out our documentation at https://stately.cloud.
 
-import { durationSeconds, itemType, string, timestampMilliseconds, uuid } from "@stately-cloud/schema";
+import {
+  durationSeconds,
+  itemType,
+  string,
+  timestampMilliseconds,
+  uuid,
+} from '@stately-cloud/schema';
 
 /**
  * A basic User object
  */
 export const User = itemType('User', {
-  keyPath: '/user-:id',
+  keyPath: [
+    '/user-:id',
+    '/user_email-:email',
+  ],
   fields: {
     id: {
       type: uuid,
@@ -23,8 +32,8 @@ export const User = itemType('User', {
     createdAt: {
       type: timestampMilliseconds,
       fromMetadata: 'createdAtTime',
-    }
-  }
+    },
+  },
 });
 
 /**
@@ -43,8 +52,8 @@ export const Resource = itemType('Resource', {
     createdAt: {
       type: timestampMilliseconds,
       fromMetadata: 'createdAtTime',
-    }
-  }
+    },
+  },
 });
 
 /**
@@ -54,6 +63,7 @@ export const Lease = itemType('Lease', {
   keyPath: [
     '/user-:user_id/res-:res_id/lease-:id',
     '/res-:res_id/lease-:id',
+    '/lease-:id',
   ],
   // Automatically delete leases after the time in the duration field since they
   // were last updated.
@@ -93,5 +103,5 @@ export const Lease = itemType('Lease', {
       type: timestampMilliseconds,
       fromMetadata: 'createdAtTime',
     },
-  }
+  },
 });

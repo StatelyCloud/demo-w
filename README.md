@@ -31,8 +31,20 @@ See `schema-v1/schema.ts`. This is a simple model for a permissions lease system
 go mod init github.com/StatelyCloud/demo-w
 
 # Generate preview code to see what it looks like
-stately schema generate -l go --preview schema-v1/schema.ts pkg/schema/v1
+stately schema generate -l go --preview schema-v1/schema.ts pkg/schema
 
 # Run mod tidy to "install" all the dependencies
 go mod tidy
 ```
+
+## Step 3: Set up a Store and Schema
+
+1. Create the backing table and IAM roles in your account by following: https://docs.stately.cloud/deployment/byoc/
+2. In the Console, click "New Store", select BYOC and provide the table ARN from above.
+3. Copy the store ID and schema ID. 6978411690784381 and 4291558376530788.
+5. Create an Access Key with the type "Data Plane Key for BYOC".
+
+## Step 4: Develop a client
+
+See the code in `pkg/client`. This implements some business logic around managing leases.
+
