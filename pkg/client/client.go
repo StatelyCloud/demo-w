@@ -21,18 +21,16 @@ func NewClient(ctx context.Context, storeID uint64) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return &Client{
 		statelyClient,
 	}, nil
 }
 
 func (c *Client) CreateUser(ctx context.Context, displayName, email string) (*schema.User, error) {
-	user := &schema.User{
+	item, err := c.client.Put(ctx, &schema.User{
 		DisplayName: displayName,
 		Email:       email,
-	}
-	item, err := c.client.Put(ctx, user)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -40,10 +38,9 @@ func (c *Client) CreateUser(ctx context.Context, displayName, email string) (*sc
 }
 
 func (c *Client) CreateResource(ctx context.Context, name string) (*schema.Resource, error) {
-	resource := &schema.Resource{
+	item, err := c.client.Put(ctx, &schema.Resource{
 		Name: name,
-	}
-	item, err := c.client.Put(ctx, resource)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -51,13 +48,12 @@ func (c *Client) CreateResource(ctx context.Context, name string) (*schema.Resou
 }
 
 func (c *Client) CreateLease(ctx context.Context, userID, resourceID uuid.UUID, reason string, duration time.Duration) (*schema.Lease, error) {
-	lease := &schema.Lease{
+	item, err := c.client.Put(ctx, &schema.Lease{
 		UserId:   userID,
 		ResId:    resourceID,
 		Reason:   reason,
 		Duration: duration,
-	}
-	item, err := c.client.Put(ctx, lease)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -69,12 +65,11 @@ func (c *Client) DeleteLease(ctx context.Context, leaseID uuid.UUID) error {
 }
 
 func (c *Client) GetLeasesForUser(ctx context.Context, userID uuid.UUID) ([]*schema.Lease, error) {
-	var leases []*schema.Lease
 	resp, err := c.client.BeginList(ctx, "/user-"+stately.ToKeyID(userID[:])+"/res")
 	if err != nil {
 		return nil, err
 	}
-	leases = make([]*schema.Lease, 0)
+	var leases []*schema.Lease
 	for resp.Next() {
 		if lease, ok := resp.Value().(*schema.Lease); ok {
 			leases = append(leases, lease)
@@ -84,12 +79,11 @@ func (c *Client) GetLeasesForUser(ctx context.Context, userID uuid.UUID) ([]*sch
 }
 
 func (c *Client) GetLeasesForResource(ctx context.Context, resourceID uuid.UUID) ([]*schema.Lease, error) {
-	var leases []*schema.Lease
 	resp, err := c.client.BeginList(ctx, "/res-"+stately.ToKeyID(resourceID[:])+"/lease")
 	if err != nil {
 		return nil, err
 	}
-	leases = make([]*schema.Lease, 0)
+	var leases []*schema.Lease
 	for resp.Next() {
 		if lease, ok := resp.Value().(*schema.Lease); ok {
 			leases = append(leases, lease)

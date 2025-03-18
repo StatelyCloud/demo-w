@@ -37,14 +37,7 @@ stately schema generate -l go --preview schema-v1/schema.ts pkg/schema
 go mod tidy
 ```
 
-## Step 3: Set up a Store and Schema
-
-1. Create the backing table and IAM roles in your account by following: https://docs.stately.cloud/deployment/byoc/
-2. In the Console, click "New Store", select BYOC and provide the table ARN from above.
-3. Copy the store ID and schema ID. 6978411690784381 and 4291558376530788.
-5. Create an Access Key with the type "Data Plane Key for BYOC".
-
-## Step 4: Develop a client
+## Step 3: Develop a client
 
 See the code in `pkg/client`. This implements some business logic around managing leases.
 
@@ -56,3 +49,10 @@ As a comparison we've also implemented a similar client in `pkg/ddb` that does t
 * This version doesn't properly track createdAt and lastModifiedAt times.
 * Validation needs to happen on the client side, since there's no schema to enforce shape.
 * In the StatelyDB version, we easily enforce uniqueness of user by email - in the DDB version this requires carefully writing to (and reading from) two copies of the user with a transaction.
+
+## Step 4: Set up a Store and Schema
+
+1. Create the backing table and IAM roles in your account by following: https://docs.stately.cloud/deployment/byoc/
+2. In the Console, click "New Store", select BYOC and provide the table ARN from above.
+3. Copy the store ID and schema ID. 6978411690784381 and 4291558376530788.
+5. Create an Access Key with the type "Data Plane Key for BYOC".

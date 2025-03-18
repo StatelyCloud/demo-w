@@ -6,8 +6,14 @@ import {
   itemType,
   string,
   timestampMilliseconds,
+  type,
   uuid,
 } from '@stately-cloud/schema';
+
+// These are optional but help document ID types
+export const UserID = type('UserID', uuid);
+export const ResourceID = type('ResourceID', uuid);
+export const LeaseID = type('LeaseID', uuid);
 
 /**
  * A basic User object
@@ -19,7 +25,7 @@ export const User = itemType('User', {
   ],
   fields: {
     id: {
-      type: uuid,
+      type: UserID,
       initialValue: 'uuid',
     },
     displayName: {
@@ -43,7 +49,7 @@ export const Resource = itemType('Resource', {
   keyPath: '/res-:id',
   fields: {
     id: {
-      type: uuid,
+      type: ResourceID,
       initialValue: 'uuid',
     },
     name: {
@@ -74,16 +80,16 @@ export const Lease = itemType('Lease', {
   fields: {
     /** A unique identifier for the lease itself. */
     id: {
-      type: uuid,
+      type: LeaseID,
       initialValue: 'uuid',
     },
     /** The user that this lease is granted to. */
     user_id: {
-      type: uuid,
+      type: UserID,
     },
     /** The resource this lease grants access to. */
     res_id: {
-      type: uuid,
+      type: ResourceID,
     },
     /** Allow the user to specify why they needed the lease. */
     reason: {

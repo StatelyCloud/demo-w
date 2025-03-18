@@ -16,6 +16,7 @@ import (
 // Lease items can be accessed via the following key paths:
 // * /user-:user_id/res-:res_id/lease-:id
 // * /res-:res_id/lease-:id
+// * /lease-:id
 type Lease struct {
 	// A unique identifier for the lease itself.
 	Id uuid.UUID `protobuf:"bytes,1" json:"id,omitempty"`
@@ -268,6 +269,7 @@ func (x *Resource) KeyPath() string {
 //
 // User items can be accessed via the following key paths:
 // * /user-:id
+// * /user_email-:email
 type User struct {
 	Id uuid.UUID `protobuf:"bytes,1" json:"id,omitempty"`
 
