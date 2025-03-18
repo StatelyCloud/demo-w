@@ -3,23 +3,12 @@
 package schema
 
 import (
-	"connectrpc.com/connect"
 	"context"
-
-	"github.com/StatelyCloud/go-sdk/sdkerror"
 	"github.com/StatelyCloud/go-sdk/stately"
 )
 
-// This is a preview client based on your local changes. To re-generate a client for release, first publish your schema
-// using the Stately CLI. Then run:
-// stately generate --schema-id <your schema ID> --version <your schema version> <output_dir>
-//
 // NewClient is a convenient wrapper around stately.NewClient which creates a new client for the schema package
 // while ensuring it uses the correct stately.ItemTypeMapper
 func NewClient(ctx context.Context, storeID uint64, options ...*stately.Options) (stately.Client, error) {
-	return nil, &sdkerror.Error{
-		Code:        connect.CodeInvalidArgument,
-		StatelyCode: "InvalidArgument",
-		Message:     "This client was generated using --preview, to generate a real client, run `stately generate --schema-id <your schema ID> --version <your schema version> <output_dir>`",
-	}
+	return stately.NewClient(ctx, storeID, 1, TypeMapper, options...)
 }
