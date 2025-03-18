@@ -92,22 +92,26 @@ As a comparison we've also implemented a similar client in `pkg/ddb` that does t
       --policy-arn arn:aws:iam::<ACCOUNT_ID>:policy/StatelyDBDynamoReadWriteAccess
    ```
 3. In the Console, click "New Store", select BYOC and provide the table ARN from above.
-4. Copy the store ID and schema ID. 6978411690784381 and 4291558376530788.
+4. Copy the store ID and schema ID:
+   ```sh
+   export STATELY_STORE_ID=6978411690784381
+   export STATELY_SCHEMA_ID=4291558376530788
+   ```
 5. Create an Access Key with the type "Data Plane Key for BYOC" and copy the key string.
 6. Put your schema:
    ```sh
-   stately schema put -s 4291558376530788 schema-v1/schema.ts
-   stately schema generate -l go -s 4291558376530788 pkg/schema
+   stately schema put -s $STATELY_SCHEMA_ID schema-v1/schema.ts
+   stately schema generate -l go -v 1 -s $STATELY_SCHEMA_ID pkg/schema
    ```
 
-## Set up Kubernetes
+## Step 5: Set up Kubernetes
 
 1. Create an EKS cluster (offscreen)
     1. Create a service account for pod identity
     2. Associate it with our role:
        ```sh
        aws eks associate-pod-identity-profile \
-          --cluster-name <CLUSTER_NAME> \
+          --cluster-name $CLUSTER_NAME \
           --namespace default \
           --name demo-w-profile \
           --role-arn arn:aws:iam::<ACCOUNT_ID>:role/demo-w-role \
@@ -118,3 +122,20 @@ As a comparison we've also implemented a similar client in `pkg/ddb` that does t
    kubectl create secret generic demo-w-secret --from-literal=STATELY_ACCESS_KEY="$STATELY_ACCESS_KEY"
    ```
 3. Push your service container and create the deployment and loadbalancer using `k8s/deployment.yaml`
+
+## Step 7: Try out our service
+
+Various cURL commands to demo the service
+
+## Step 6: Updating schema
+
+1. In `schema-v2/schema.ts` we've renamed some fields and added an approver.
+2. Publish a new version of the schema:
+   ```sh
+   stately schema put -s $STATELY_SCHEMA_ID schema-v2/schema.ts
+   stately schema generate -l go -v 2 -s $STATELY_SCHEMA_ID pkg/schema
+   ```
+3. Validate that the original service is still returning the old shapes
+4. Publish a new version of the service
+5. Show that the cURL commands return the new shape
+6. TODO: how to keep the old version around? Maybe just have a separate deployment?

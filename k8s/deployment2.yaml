@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: demo-w
+  name: demo-w2
   namespace: default
 spec:
   replicas: 1
@@ -38,17 +38,12 @@ spec:
                 secretKeyRef:
                   name: demo-w-secret
                   key: STATELY_ACCESS_KEY
-          # These resource requests/limits serve to "reserve" some space on a
-          # host. The service will use the entire memory limit, but no more. You
-          # will want to adjust them based on your expected workload.
           resources:
             requests:
               memory: "256Mi"
               cpu: "100m"
             limits:
               memory: "256Mi"
-          # The liveness probe must succeed for the pod to be considered
-          # healthy. If it fails, the pod will be restarted.
           livenessProbe:
             httpGet:
               path: /health
