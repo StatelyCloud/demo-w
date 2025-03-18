@@ -2,7 +2,9 @@ package ddb
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"maps"
 	"regexp"
 	"time"
 
@@ -22,12 +24,12 @@ This implementation uses a single DynamoDB table with the following structure:
 - Primary Key: PK (partition key) and SK (sort key)
 - GSI1: Index for querying leases by user
 - GSI2: Index for querying leases by resource
-- GSI3: Index for querying users by email
 
 Key Patterns:
-- User records:     PK=USER#{id}, SK=METADATA, GSI3PK=EMAIL#{email}
-- Resource records: PK=RESOURCE#{id}, SK=METADATA
-- Lease records:    PK=LEASE#{id}, SK=METADATA, GSI1PK=USER#{id}, GSI2PK=RESOURCE#{id}
+- User records:         PK=USER#{id}, SK=METADATA
+- Email lookup records: PK=EMAIL#{id}, SK=METADATA
+- Resource records:     PK=RESOURCE#{id}, SK=METADATA
+- Lease records:        PK=LEASE#{id}, SK=METADATA, GSI1PK=USER#{id}, GSI2PK=RESOURCE#{id}
 
 Table creation command:
 
@@ -40,7 +42,6 @@ Table creation command:
 				AttributeName=GSI1SK,AttributeType=S \
 				AttributeName=GSI2PK,AttributeType=S \
 				AttributeName=GSI2SK,AttributeType=S \
-        AttributeName=GSI3PK,AttributeType=S \
 		--key-schema \
 				AttributeName=PK,KeyType=HASH \
 				AttributeName=SK,KeyType=RANGE \
@@ -73,20 +74,7 @@ Table creation command:
 										\"ReadCapacityUnits\": 5,
 										\"WriteCapacityUnits\": 5
 								}
-						},
-            {
-                \"IndexName\": \"GSI3\",
-                \"KeySchema\": [
-                    {\"AttributeName\":\"GSI3PK\",\"KeyType\":\"HASH\"}
-                ],
-                \"Projection\": {
-                    \"ProjectionType\":\"ALL\"
-                },
-                \"ProvisionedThroughput\": {
-                    \"ReadCapacityUnits\": 5,
-                    \"WriteCapacityUnits\": 5
-                }
-            }
+						}
 				]" \
 		--provisioned-throughput \
 				ReadCapacityUnits=5,WriteCapacityUnits=5
@@ -157,21 +145,46 @@ func (c *DynamoDBClient) CreateUser(ctx context.Context, displayName, email stri
 		Email:       email,
 	}
 
-	av, err := attributevalue.MarshalMap(user)
+	// Create the main user record
+	userAV, err := attributevalue.MarshalMap(user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal user: %w", err)
 	}
+	userAV["PK"] = &types.AttributeValueMemberS{Value: fmt.Sprintf("USER#%s", user.ID.String())}
+	userAV["SK"] = &types.AttributeValueMemberS{Value: "METADATA"}
 
-	av["PK"] = &types.AttributeValueMemberS{Value: fmt.Sprintf("USER#%s", user.ID.String())}
-	av["SK"] = &types.AttributeValueMemberS{Value: "METADATA"}
-	av["GSI3PK"] = &types.AttributeValueMemberS{Value: fmt.Sprintf("EMAIL#%s", email)}
+	// Create the email lookup record with full user data
+	emailAV := maps.Clone(userAV)
+	emailAV["PK"] = &types.AttributeValueMemberS{Value: fmt.Sprintf("EMAIL#%s", email)}
+	emailAV["SK"] = &types.AttributeValueMemberS{Value: "METADATA"}
 
-	_, err = c.client.PutItem(ctx, &dynamodb.PutItemInput{
-		TableName: aws.String(c.table),
-		Item:      av,
+	_, err = c.client.TransactWriteItems(ctx, &dynamodb.TransactWriteItemsInput{
+		TransactItems: []types.TransactWriteItem{
+			{
+				Put: &types.Put{
+					TableName: aws.String(c.table),
+					Item:      userAV,
+				},
+			},
+			{
+				Put: &types.Put{
+					TableName:           aws.String(c.table),
+					Item:                emailAV,
+					ConditionExpression: aws.String("attribute_not_exists(PK)"),
+				},
+			},
+		},
 	})
 
 	if err != nil {
+		var txErr *types.TransactionCanceledException
+		if errors.As(err, &txErr) {
+			for _, reason := range txErr.CancellationReasons {
+				if reason.Code != nil && *reason.Code == "ConditionalCheckFailed" {
+					return nil, fmt.Errorf("email %s is already in use", email)
+				}
+			}
+		}
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
@@ -360,27 +373,24 @@ func (c *DynamoDBClient) GetUserByEmail(ctx context.Context, email string) (*Use
 		return nil, fmt.Errorf("invalid email format")
 	}
 
-	// In DDB you can't do a GetItem on a GSI, so we have to use Query
-	result, err := c.client.Query(ctx, &dynamodb.QueryInput{
-		TableName:              aws.String(c.table),
-		IndexName:              aws.String("GSI3"),
-		KeyConditionExpression: aws.String("GSI3PK = :pk"),
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("EMAIL#%s", email)},
+	result, err := c.client.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: aws.String(c.table),
+		Key: map[string]types.AttributeValue{
+			"PK": &types.AttributeValueMemberS{Value: fmt.Sprintf("EMAIL#%s", email)},
+			"SK": &types.AttributeValueMemberS{Value: "METADATA"},
 		},
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to query user: %w", err)
+		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
-	if len(result.Items) == 0 {
+	if result.Item == nil {
 		return nil, fmt.Errorf("user not found")
 	}
 
 	var user User
-	err = attributevalue.UnmarshalMap(result.Items[0], &user)
-	if err != nil {
+	if err := attributevalue.UnmarshalMap(result.Item, &user); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal user: %w", err)
 	}
 

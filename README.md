@@ -55,4 +55,4 @@ As a comparison we've also implemented a similar client in `pkg/ddb` that does t
 * This version doesn't have quite the same flexibility as the StatelyDB version - it uses GSIs to handle the alternate lookups, but doesn't put in place all the GSIs you might need.
 * This version doesn't properly track createdAt and lastModifiedAt times.
 * Validation needs to happen on the client side, since there's no schema to enforce shape.
-* In the StatelyDB version, we enforce uniqueness of user by email - in the DDB version this is very difficult to do.
+* In the StatelyDB version, we easily enforce uniqueness of user by email - in the DDB version this requires carefully writing to (and reading from) two copies of the user with a transaction.
