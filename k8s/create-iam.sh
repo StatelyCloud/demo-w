@@ -35,9 +35,8 @@ ROLE_ARN=$(aws iam get-role --role-name demo-w-role --query 'Role.Arn' --output 
 aws iam attach-role-policy \
   --role-name demo-w-role \
   --policy-arn $POLICY_ARN
-aws eks associate-pod-identity-profile \
+aws eks create-pod-identity-association \
   --cluster-name $CLUSTER_NAME \
   --namespace default \
-  --name demo-w-profile \
   --role-arn $ROLE_ARN \
   --service-account demo-w

@@ -16,7 +16,7 @@ type Client struct {
 func NewClient(ctx context.Context, storeID uint64) (*Client, error) {
 	statelyClient, err := schema.NewClient(ctx, storeID, &stately.Options{
 		NoAuth:   true,
-		Endpoint: "http://localhost:3000",
+		Endpoint: "http://localhost:3030",
 	})
 	if err != nil {
 		return nil, err

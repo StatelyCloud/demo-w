@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -79,7 +81,7 @@ func (s *server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := s.client.CreateUser(r.Context(), req.Email, req.Name)
+	user, err := s.client.CreateUser(r.Context(), req.Name, req.Email)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -123,15 +125,15 @@ func (s *server) handleCreateLease(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := uuid.Parse(req.UserID)
+	userID, err := fromStatelyUUID(req.UserID)
 	if err != nil {
-		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid user ID format %s", err.Error()), http.StatusBadRequest)
 		return
 	}
 
-	resourceID, err := uuid.Parse(req.ResourceID)
+	resourceID, err := fromStatelyUUID(req.ResourceID)
 	if err != nil {
-		http.Error(w, "Invalid resource ID format", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid resource ID format %s", err.Error()), http.StatusBadRequest)
 		return
 	}
 
@@ -152,9 +154,9 @@ func (s *server) handleGetUserLeases(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := uuid.Parse(r.URL.Path[len("/users/"):])
+	userID, err := fromStatelyUUID(r.URL.Path[len("/users/"):])
 	if err != nil {
-		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid user ID format %s (%s)", err.Error(), r.URL.Path[len("/users/"):]), http.StatusBadRequest)
 		return
 	}
 
@@ -174,9 +176,9 @@ func (s *server) handleGetResourceLeases(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	resourceID, err := uuid.Parse(r.URL.Path[len("/resources/"):])
+	resourceID, err := fromStatelyUUID(r.URL.Path[len("/resources/"):])
 	if err != nil {
-		http.Error(w, "Invalid resource ID format", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid resource ID format %s (%s)", err.Error(), r.URL.Path[len("/resources/"):]), http.StatusBadRequest)
 		return
 	}
 
@@ -188,4 +190,18 @@ func (s *server) handleGetResourceLeases(w http.ResponseWriter, r *http.Request)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(leases)
+}
+
+func fromStatelyUUID(b64id string) (uuid.UUID, error) {
+	// decode the b64id to a byte slice
+	id, err := base64.StdEncoding.DecodeString(b64id)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	// convert the byte slice to a UUID
+	u, err := uuid.FromBytes(id)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return u, nil
 }

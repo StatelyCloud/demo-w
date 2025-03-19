@@ -81,10 +81,13 @@ As a comparison we've also implemented a similar client in `pkg/ddb` that does t
           {
             "Effect": "Allow",
             "Principal": {
-              "Service": "pods.eks.amazonaws.com"
+                "Service": "pods.eks.amazonaws.com"
             },
-            "Action": "sts:AssumeRole"
-          }
+            "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+            ]
+        }
         ]
       }'
    aws iam attach-role-policy \
@@ -94,7 +97,7 @@ As a comparison we've also implemented a similar client in `pkg/ddb` that does t
 3. In the Console, click "New Store", select BYOC and provide the table ARN from above.
 4. Copy the store ID and schema ID:
    ```sh
-   export STATELY_STORE_ID=6978411690784381
+   export STATELY_STORE_ID=4811130409281414
    export STATELY_SCHEMA_ID=4291558376530788
    ```
 5. Create an Access Key with the type "Data Plane Key for BYOC" and copy the key string.
@@ -107,13 +110,15 @@ As a comparison we've also implemented a similar client in `pkg/ddb` that does t
 ## Step 5: Set up Kubernetes
 
 1. Create an EKS cluster (offscreen)
-    1. Create a service account for pod identity
+    1. Create a service account for pod identity:
+       ```sh
+       kubectl apply -f k8s/service-account.yaml
+       ```
     2. Associate it with our role:
        ```sh
-       aws eks associate-pod-identity-profile \
+       aws eks create-pod-identity-association \
           --cluster-name $CLUSTER_NAME \
           --namespace default \
-          --name demo-w-profile \
           --role-arn arn:aws:iam::<ACCOUNT_ID>:role/demo-w-role \
           --service-account demo-w
        ```
@@ -121,13 +126,49 @@ As a comparison we've also implemented a similar client in `pkg/ddb` that does t
    ```sh
    kubectl create secret generic demo-w-secret --from-literal=STATELY_ACCESS_KEY="$STATELY_ACCESS_KEY"
    ```
-3. Push your service container and create the deployment and loadbalancer using `k8s/deployment.yaml`
+3. Push your service container and create the deployment and loadbalancer using `k8s/deployment.yaml`:
+   ```sh
+   ./publish.sh
+   kubectl apply -f k8s/deployment.yaml
+   ```
 
-## Step 7: Try out our service
+## Step 6: Try out our service
 
-Various cURL commands to demo the service
+Test the service with these curl commands:
 
-## Step 6: Updating schema
+```sh
+export DEMO_HOST="ac049c19b626845c9a3f9cc15ae94220-2137334291.us-west-2.elb.amazonaws.com"
+
+# Create a user
+curl -X POST http://$DEMO_HOST/users \
+  -H "Content-Type: application/json" \
+  -d '{"email":"john@example.com", "name":"John Doe"}'
+
+# Create a resource
+curl -X POST http://$DEMO_HOST/resources \
+  -H "Content-Type: application/json" \
+  -d '{"name":"sensitive-database"}'
+
+# Create a lease (replace UUIDs with actual IDs from previous responses)
+curl -X POST http://$DEMO_HOST/leases \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "FY4wCvQLT9ycXM0jmv3nTg==",
+    "resourceId": "uBrp9ZP8SR6WvcKYL8WCLg==",
+    "reason": "Database maintenance",
+    "durationHours": 0.5
+  }'
+
+# Get leases for a user (replace UUID with actual user ID)
+curl http://$DEMO_HOST/users/FY4wCvQLT9ycXM0jmv3nTg==
+
+# Get leases for a resource (replace UUID with actual resource ID)
+curl http://$DEMO_HOST/resources/uBrp9ZP8SR6WvcKYL8WCLg==
+```
+
+Replace `localhost:8080` with your actual service URL if deploying to Kubernetes.
+
+## Step 7: Updating schema
 
 1. In `schema-v2/schema.ts` we've renamed some fields and added an approver.
 2. Publish a new version of the schema:

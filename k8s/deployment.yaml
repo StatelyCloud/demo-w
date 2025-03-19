@@ -17,13 +17,13 @@ spec:
       serviceAccountName: demo-w
       containers:
         - name: demo-w
-          image: TODO
+          image: 509869530682.dkr.ecr.us-west-2.amazonaws.com/internal/demo-w:latest
           ports:
             - containerPort: 8080
               name: http # HTTP/2 cleartext
           env:
             - name: STATELY_STORE_ID
-              value: 6978411690784381
+              value: "4811130409281414"
 
         # The StatelyDB sidecar
         - name: statelydb
