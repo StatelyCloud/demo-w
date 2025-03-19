@@ -31,7 +31,6 @@ type createResourceRequest struct {
 type createLeaseRequest struct {
 	UserID      string  `json:"userId"`
 	ResourceID  string  `json:"resourceId"`
-	Reason      string  `json:"reason"`
 	DurationHrs float64 `json:"durationHours"`
 	Approver    string  `json:"approver"`
 }
@@ -147,7 +146,7 @@ func (s *server) handleCreateLease(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	lease, err := s.client.CreateLease(r.Context(), userID, resourceID, req.Reason,
+	lease, err := s.client.CreateLease(r.Context(), userID, resourceID,
 		time.Duration(req.DurationHrs*float64(time.Hour)), approverID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

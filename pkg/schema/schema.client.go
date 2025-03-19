@@ -10,5 +10,5 @@ import (
 // NewClient is a convenient wrapper around stately.NewClient which creates a new client for the schema package
 // while ensuring it uses the correct stately.ItemTypeMapper
 func NewClient(ctx context.Context, storeID uint64, options ...*stately.Options) (stately.Client, error) {
-	return stately.NewClient(ctx, storeID, 2, 4291558376530788, TypeMapper, options...)
+	return stately.NewClient(ctx, storeID, 3, 4291558376530788, TypeMapper, options...)
 }

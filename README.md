@@ -199,7 +199,6 @@ curl -X POST http://$DEMO2_HOST/leases \
   -d '{
     "userId": "FY4wCvQLT9ycXM0jmv3nTg==",
     "resourceId": "uBrp9ZP8SR6WvcKYL8WCLg==",
-    "reason": "Database maintenance",
     "approver": "A6NnaIivT4S6wI4H3oeRUg==",
     "durationHours": 0.5
   }'

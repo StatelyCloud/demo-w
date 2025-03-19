@@ -28,6 +28,7 @@ spec:
         # The StatelyDB sidecar
         - name: statelydb
           image: public.ecr.aws/stately/dataplane:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 3030
               name: h2c # HTTP/2 cleartext

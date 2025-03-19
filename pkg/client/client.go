@@ -47,11 +47,10 @@ func (c *Client) CreateResource(ctx context.Context, name string) (*schema.Resou
 	return item.(*schema.Resource), nil
 }
 
-func (c *Client) CreateLease(ctx context.Context, userID, resourceID uuid.UUID, reason string, duration time.Duration, approver uuid.UUID) (*schema.Lease, error) {
+func (c *Client) CreateLease(ctx context.Context, userID, resourceID uuid.UUID, duration time.Duration, approver uuid.UUID) (*schema.Lease, error) {
 	item, err := c.client.Put(ctx, &schema.Lease{
 		UserId:          userID,
 		ResourceId:      resourceID,
-		Reason:          reason,
 		DurationSeconds: duration,
 		Approver:        approver,
 	})

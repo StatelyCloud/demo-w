@@ -95,6 +95,7 @@ export const Lease = itemType('Lease', {
     /** Allow the user to specify why they needed the lease. */
     reason: {
       type: string,
+      required: false,
     },
     /** Who has approved this? The lease is not considered valid until approved by another person. */
     approver: {
@@ -123,5 +124,11 @@ export const AddApprover = migrate(1, "Add approver and make reason optional", (
     t.addField('approver');
     t.renameField('res_id', 'resource_id');
     t.renameField('duration', 'duration_seconds');
+  })
+});
+
+export const ReasonNotRequired = migrate(2, "Make reason not required", (m) => {
+  m.changeType('Lease', (t) => {
+    t.markFieldAsNotRequired('reason', 'No reason given');
   })
 });
