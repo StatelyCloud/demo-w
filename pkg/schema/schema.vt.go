@@ -18,12 +18,13 @@ func (m *Lease) Clone() *Lease {
 	}
 	r := new(Lease)
 	r.Reason = m.Reason
-	r.Duration = m.Duration
+	r.DurationSeconds = m.DurationSeconds
 	r.LastTouched = m.LastTouched
 	r.CreatedAt = m.CreatedAt
 	r.Id = m.Id
 	r.UserId = m.UserId
-	r.ResId = m.ResId
+	r.ResourceId = m.ResourceId
+	r.Approver = m.Approver
 
 	return r
 }
@@ -65,19 +66,22 @@ func (this *Lease) Equal(that *Lease) bool {
 	if this.UserId != that.UserId {
 		return false
 	}
-	if this.ResId != that.ResId {
+	if this.ResourceId != that.ResourceId {
 		return false
 	}
 	if this.Reason != that.Reason {
 		return false
 	}
-	if this.Duration != that.Duration {
+	if this.DurationSeconds != that.DurationSeconds {
 		return false
 	}
 	if !this.LastTouched.Equal(that.LastTouched) {
 		return false
 	}
 	if !this.CreatedAt.Equal(that.CreatedAt) {
+		return false
+	}
+	if this.Approver != that.Approver {
 		return false
 	}
 	return true
@@ -148,6 +152,13 @@ func (m *Lease) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.Approver != uuid.Nil {
+		i -= len(m.Approver)
+		copy(dAtA[i:], m.Approver[:])
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Approver)))
+		i--
+		dAtA[i] = 0x42
+	}
 	if !m.CreatedAt.IsZero() {
 		ts := m.CreatedAt.UnixMilli()
 		i = protohelpers.EncodeVarint(dAtA, i, uint64((uint64(ts)<<1)^uint64((ts>>63))))
@@ -160,8 +171,8 @@ func (m *Lease) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x30
 	}
-	if m.Duration != 0 {
-		ts := int64(m.Duration.Seconds())
+	if m.DurationSeconds != 0 {
+		ts := int64(m.DurationSeconds.Seconds())
 		i = protohelpers.EncodeVarint(dAtA, i, uint64((uint64(ts)<<1)^uint64((ts>>63))))
 		i--
 		dAtA[i] = 0x28
@@ -173,10 +184,10 @@ func (m *Lease) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x22
 	}
-	if m.ResId != uuid.Nil {
-		i -= len(m.ResId)
-		copy(dAtA[i:], m.ResId[:])
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ResId)))
+	if m.ResourceId != uuid.Nil {
+		i -= len(m.ResourceId)
+		copy(dAtA[i:], m.ResourceId[:])
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ResourceId)))
 		i--
 		dAtA[i] = 0x1a
 	}
@@ -316,16 +327,16 @@ func (m *Lease) Size() (n int) {
 	if m.UserId != uuid.Nil {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	l = len(m.ResId)
-	if m.ResId != uuid.Nil {
+	l = len(m.ResourceId)
+	if m.ResourceId != uuid.Nil {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Reason)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.Duration != 0 {
-		ts := int64(m.Duration.Seconds())
+	if m.DurationSeconds != 0 {
+		ts := int64(m.DurationSeconds.Seconds())
 		n += 1 + protohelpers.SizeOfZigzag(uint64(ts))
 	}
 	if !m.LastTouched.IsZero() {
@@ -335,6 +346,10 @@ func (m *Lease) Size() (n int) {
 	if !m.CreatedAt.IsZero() {
 		ts := m.CreatedAt.UnixMilli()
 		n += 1 + protohelpers.SizeOfZigzag(uint64(ts))
+	}
+	l = len(m.Approver)
+	if m.Approver != uuid.Nil {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
 }
@@ -490,7 +505,7 @@ func (m *Lease) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ResId", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ResourceId", wireType)
 			}
 			var byteLen int
 			for shift := uint(0); ; shift += 7 {
@@ -519,9 +534,9 @@ func (m *Lease) Unmarshal(dAtA []byte) error {
 			}
 			temp := dAtA[iNdEx:postIndex]
 			if len(temp) == 16 {
-				m.ResId = uuid.UUID(temp)
+				m.ResourceId = uuid.UUID(temp)
 			} else {
-				m.ResId = uuid.Nil
+				m.ResourceId = uuid.Nil
 			}
 
 			iNdEx = postIndex
@@ -559,7 +574,7 @@ func (m *Lease) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 5:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Duration", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field DurationSeconds", wireType)
 			}
 			var v uint64
 			for shift := uint(0); ; shift += 7 {
@@ -577,7 +592,7 @@ func (m *Lease) Unmarshal(dAtA []byte) error {
 				}
 			}
 			v = (v >> 1) ^ uint64((int64(v&1)<<63)>>63)
-			m.Duration = time.Duration(v) * time.Second
+			m.DurationSeconds = time.Duration(v) * time.Second
 		case 6:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastTouched", wireType)
@@ -620,6 +635,43 @@ func (m *Lease) Unmarshal(dAtA []byte) error {
 			}
 			v = (v >> 1) ^ uint64((int64(v&1)<<63)>>63)
 			m.CreatedAt = time.UnixMilli(int64(v))
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Approver", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			temp := dAtA[iNdEx:postIndex]
+			if len(temp) == 16 {
+				m.Approver = uuid.UUID(temp)
+			} else {
+				m.Approver = uuid.Nil
+			}
+
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

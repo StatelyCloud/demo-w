@@ -68,15 +68,15 @@ export const Resource = itemType('Resource', {
  */
 export const Lease = itemType('Lease', {
   keyPath: [
-    '/user-:user_id/res-:res_id/lease-:id',
-    '/res-:res_id/lease-:id',
+    '/user-:user_id/res-:resource_id/lease-:id',
+    '/res-:resource_id/lease-:id',
     '/lease-:id',
   ],
   // Automatically delete leases after the time in the duration field since they
   // were last updated.
   ttl: {
     source: 'fromLastModified',
-    field: 'duration',
+    field: 'duration_seconds',
   },
   fields: {
     /** A unique identifier for the lease itself. */
@@ -95,7 +95,6 @@ export const Lease = itemType('Lease', {
     /** Allow the user to specify why they needed the lease. */
     reason: {
       type: string,
-      readDefault: 'No reason provided',
     },
     /** Who has approved this? The lease is not considered valid until approved by another person. */
     approver: {
@@ -121,7 +120,6 @@ export const Lease = itemType('Lease', {
 
 export const AddApprover = migrate(1, "Add approver and make reason optional", (m) => {
   m.changeType('Lease', (t) => {
-    t.addField('reason');
     t.addField('approver');
     t.renameField('res_id', 'resource_id');
     t.renameField('duration', 'duration_seconds');

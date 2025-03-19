@@ -4,17 +4,17 @@ go 1.23.4
 
 require (
 	connectrpc.com/connect v1.18.1
-	github.com/StatelyCloud/go-sdk v0.29.0
+	github.com/StatelyCloud/go-sdk v0.33.0
 	github.com/aws/aws-sdk-go-v2 v1.36.3
 	github.com/aws/aws-sdk-go-v2/config v1.29.9
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.18.8
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.42.0
 	github.com/google/uuid v1.6.0
-	github.com/planetscale/vtprotobuf v0.6.1-0.20241121165744-79df5c4772f2
+	github.com/planetscale/vtprotobuf v0.6.1-0.20250313105119-ba97887b0a25
 )
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.5-20250219170025-d39267d9df8f.1 // indirect
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.5-20250307204501-0409229c3780.1 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.62 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.30 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.34 // indirect
@@ -29,9 +29,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.17 // indirect
 	github.com/aws/smithy-go v1.22.2 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
-	golang.org/x/exp v0.0.0-20250228200357-dead58393ab7 // indirect
-	golang.org/x/net v0.35.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
+	golang.org/x/net v0.37.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
 )

@@ -14,8 +14,8 @@ import (
 // A "lease" gives users temporary access to a resource.
 //
 // Lease items can be accessed via the following key paths:
-// * /user-:user_id/res-:res_id/lease-:id
-// * /res-:res_id/lease-:id
+// * /user-:user_id/res-:resource_id/lease-:id
+// * /res-:resource_id/lease-:id
 // * /lease-:id
 type Lease struct {
 	// A unique identifier for the lease itself.
@@ -25,18 +25,21 @@ type Lease struct {
 	UserId uuid.UUID `protobuf:"bytes,2" json:"user_id,omitempty"`
 
 	// The resource this lease grants access to.
-	ResId uuid.UUID `protobuf:"bytes,3" json:"res_id,omitempty"`
+	ResourceId uuid.UUID `protobuf:"bytes,3" json:"resource_id,omitempty"`
 
 	// Allow the user to specify why they needed the lease.
 	Reason string `protobuf:"bytes,4" json:"reason,omitempty"`
 
 	// How long is this lease for? This is measured from when the lease was last modified.
-	Duration time.Duration `protobuf:"zigzag64,5" json:"duration,omitempty,string"`
+	DurationSeconds time.Duration `protobuf:"zigzag64,5" json:"duration_seconds,omitempty,string"`
 
 	// Last touch time allows us to extend a lease by updating it.
 	LastTouched time.Time `protobuf:"zigzag64,6" json:"lastTouched,omitempty,string"`
 
 	CreatedAt time.Time `protobuf:"zigzag64,7" json:"createdAt,omitempty,string"`
+
+	// Who has approved this? The lease is not considered valid until approved by another person.
+	Approver uuid.UUID `protobuf:"bytes,8" json:"approver,omitempty"`
 }
 
 // GetId is a nil-safe getter for field Id.
@@ -55,12 +58,12 @@ func (x *Lease) GetUserId() uuid.UUID {
 	return x.UserId
 }
 
-// GetResId is a nil-safe getter for field ResId.
-func (x *Lease) GetResId() uuid.UUID {
+// GetResourceId is a nil-safe getter for field ResourceId.
+func (x *Lease) GetResourceId() uuid.UUID {
 	if x == nil {
 		return uuid.Nil
 	}
-	return x.ResId
+	return x.ResourceId
 }
 
 // GetReason is a nil-safe getter for field Reason.
@@ -71,12 +74,12 @@ func (x *Lease) GetReason() string {
 	return x.Reason
 }
 
-// GetDuration is a nil-safe getter for field Duration.
-func (x *Lease) GetDuration() time.Duration {
+// GetDurationSeconds is a nil-safe getter for field DurationSeconds.
+func (x *Lease) GetDurationSeconds() time.Duration {
 	if x == nil {
 		return 0
 	}
-	return x.Duration
+	return x.DurationSeconds
 }
 
 // GetLastTouched is a nil-safe getter for field LastTouched.
@@ -95,25 +98,35 @@ func (x *Lease) GetCreatedAt() time.Time {
 	return x.CreatedAt
 }
 
+// GetApprover is a nil-safe getter for field Approver.
+func (x *Lease) GetApprover() uuid.UUID {
+	if x == nil {
+		return uuid.Nil
+	}
+	return x.Approver
+}
+
 // MarshalJSON implements a custom JSON marshaller for Lease.
 func (x Lease) MarshalJSON() ([]byte, error) {
 	type Alias Lease
 	aux := &struct {
 		*Alias
-		Id          []byte `json:"id,omitempty"`
-		UserId      []byte `json:"user_id,omitempty"`
-		ResId       []byte `json:"res_id,omitempty"`
-		Duration    int64  `json:"duration,omitempty,string"`
-		LastTouched int64  `json:"lastTouched,omitempty,string"`
-		CreatedAt   int64  `json:"createdAt,omitempty,string"`
+		Id              []byte `json:"id,omitempty"`
+		UserId          []byte `json:"user_id,omitempty"`
+		ResourceId      []byte `json:"resource_id,omitempty"`
+		DurationSeconds int64  `json:"duration_seconds,omitempty,string"`
+		LastTouched     int64  `json:"lastTouched,omitempty,string"`
+		CreatedAt       int64  `json:"createdAt,omitempty,string"`
+		Approver        []byte `json:"approver,omitempty"`
 	}{
-		Alias:       (*Alias)(&x),
-		Id:          uuidToBinary(x.Id),
-		UserId:      uuidToBinary(x.UserId),
-		ResId:       uuidToBinary(x.ResId),
-		Duration:    int64(x.Duration.Seconds()),
-		LastTouched: int64(x.LastTouched.UnixMilli()),
-		CreatedAt:   int64(x.CreatedAt.UnixMilli()),
+		Alias:           (*Alias)(&x),
+		Id:              uuidToBinary(x.Id),
+		UserId:          uuidToBinary(x.UserId),
+		ResourceId:      uuidToBinary(x.ResourceId),
+		DurationSeconds: int64(x.DurationSeconds.Seconds()),
+		LastTouched:     int64(x.LastTouched.UnixMilli()),
+		CreatedAt:       int64(x.CreatedAt.UnixMilli()),
+		Approver:        uuidToBinary(x.Approver),
 	}
 	return json.Marshal(aux)
 }
@@ -123,12 +136,13 @@ func (x *Lease) UnmarshalJSON(data []byte) error {
 	type Alias Lease
 	aux := &struct {
 		*Alias
-		Id          []byte `json:"id,omitempty"`
-		UserId      []byte `json:"user_id,omitempty"`
-		ResId       []byte `json:"res_id,omitempty"`
-		Duration    int64  `json:"duration,omitempty,string"`
-		LastTouched int64  `json:"lastTouched,omitempty,string"`
-		CreatedAt   int64  `json:"createdAt,omitempty,string"`
+		Id              []byte `json:"id,omitempty"`
+		UserId          []byte `json:"user_id,omitempty"`
+		ResourceId      []byte `json:"resource_id,omitempty"`
+		DurationSeconds int64  `json:"duration_seconds,omitempty,string"`
+		LastTouched     int64  `json:"lastTouched,omitempty,string"`
+		CreatedAt       int64  `json:"createdAt,omitempty,string"`
+		Approver        []byte `json:"approver,omitempty"`
 	}{Alias: (*Alias)(x)}
 
 	err := json.Unmarshal(data, &aux)
@@ -137,10 +151,11 @@ func (x *Lease) UnmarshalJSON(data []byte) error {
 	}
 	x.Id = binaryToUUID(aux.Id)
 	x.UserId = binaryToUUID(aux.UserId)
-	x.ResId = binaryToUUID(aux.ResId)
-	x.Duration = time.Duration(aux.Duration) * time.Second
+	x.ResourceId = binaryToUUID(aux.ResourceId)
+	x.DurationSeconds = time.Duration(aux.DurationSeconds) * time.Second
 	x.LastTouched = time.UnixMilli(int64(aux.LastTouched))
 	x.CreatedAt = time.UnixMilli(int64(aux.CreatedAt))
+	x.Approver = binaryToUUID(aux.Approver)
 	return nil
 }
 
@@ -163,11 +178,11 @@ func (x *Lease) MarshalStately() (*db.Item, error) {
 }
 
 // KeyPath constructs and returns the primary key for this ItemType,
-// based on the template `/user-:user_id/res-:res_id/lease-:id` defined in schema.
+// based on the template `/user-:user_id/res-:resource_id/lease-:id` defined in schema.
 // Note: The key constructed here will only be valid if the required key fields are set.
 func (x *Lease) KeyPath() string {
 	return "/user-" + stately.ToKeyID([16]byte(x.GetUserId())) +
-		"/res-" + stately.ToKeyID([16]byte(x.GetResId())) +
+		"/res-" + stately.ToKeyID([16]byte(x.GetResourceId())) +
 		"/lease-" + stately.ToKeyID([16]byte(x.GetId()))
 }
 

@@ -7,23 +7,23 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: demo-w
+      app: demo-w2
   template:
     metadata:
       labels:
-        app: demo-w
+        app: demo-w2
     spec:
       # required for pod identity to apply the correct role
       serviceAccountName: demo-w
       containers:
         - name: demo-w
-          image: TODO
+          image: 509869530682.dkr.ecr.us-west-2.amazonaws.com/internal/demo-w:v2
           ports:
             - containerPort: 8080
               name: http # HTTP/2 cleartext
           env:
             - name: STATELY_STORE_ID
-              value: 6978411690784381
+              value: "4811130409281414"
 
         # The StatelyDB sidecar
         - name: statelydb
@@ -54,7 +54,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: demo-w
+  name: demo-w2
   namespace: default
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: application
@@ -67,4 +67,4 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: demo-w
+    app: demo-w2

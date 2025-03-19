@@ -20,14 +20,14 @@ See `schema-v1/schema.ts`. This is a simple model for a permissions lease system
 
 * It leverages a single table design to store users, resources, and leases in a single store.
 * Key paths are chosen to allow for:
-    * Listing all active leases for a user. Users an see all their leases in the lease tool.
+    * Listing all active leases for a user. Users can see all their leases in the lease tool.
     * Listing all active leases for a resource. Useful for an admin panel or resource owner.
     * Getting the lease (or leases) for a specific user + resource. Useful for an AuthZ filter.
 * A TTL on the lease means it expires a configurable time from when the lease was created.
 * "touching" the lease extends the expiration.
 
 ```sh
-# Crate a go.mod file - we need this to generate code
+# Create a go.mod file - we need this to generate code
 go mod init github.com/StatelyCloud/demo-w
 
 # Generate preview code to see what it looks like
@@ -156,14 +156,14 @@ curl -X POST http://$DEMO_HOST/leases \
     "userId": "FY4wCvQLT9ycXM0jmv3nTg==",
     "resourceId": "uBrp9ZP8SR6WvcKYL8WCLg==",
     "reason": "Database maintenance",
-    "durationHours": 0.5
+    "durationHours": 0.25
   }'
 
 # Get leases for a user (replace UUID with actual user ID)
 curl http://$DEMO_HOST/users/FY4wCvQLT9ycXM0jmv3nTg==
 
 # Get leases for a resource (replace UUID with actual resource ID)
-curl http://$DEMO_HOST/resources/uBrp9ZP8SR6WvcKYL8WCLg==
+curl http://$DEMO_HOST/resources/uBrp9ZP8SR6WvcKYL8WCLg== | jq
 ```
 
 Replace `localhost:8080` with your actual service URL if deploying to Kubernetes.
@@ -180,3 +180,33 @@ Replace `localhost:8080` with your actual service URL if deploying to Kubernetes
 4. Publish a new version of the service
 5. Show that the cURL commands return the new shape
 6. TODO: how to keep the old version around? Maybe just have a separate deployment?
+
+## Step 6: Try out our service at V2
+
+Test the service with these curl commands:
+
+```sh
+export DEMO2_HOST="a673b522b45bf484197c1f41c5b9700e-631932329.us-west-2.elb.amazonaws.com"
+
+# Create a user
+curl -X POST http://$DEMO2_HOST/users \
+  -H "Content-Type: application/json" \
+  -d '{"email":"sam@example.com", "name":"Sam Manager"}'
+
+# Create a lease
+curl -X POST http://$DEMO2_HOST/leases \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "FY4wCvQLT9ycXM0jmv3nTg==",
+    "resourceId": "uBrp9ZP8SR6WvcKYL8WCLg==",
+    "reason": "Database maintenance",
+    "approver": "A6NnaIivT4S6wI4H3oeRUg==",
+    "durationHours": 0.5
+  }'
+
+# Get leases for a user (replace UUID with actual user ID)
+curl http://$DEMO2_HOST/users/FY4wCvQLT9ycXM0jmv3nTg==
+
+# Get leases for a resource (replace UUID with actual resource ID)
+curl http://$DEMO2_HOST/resources/uBrp9ZP8SR6WvcKYL8WCLg== | jq
+```

@@ -33,6 +33,7 @@ type createLeaseRequest struct {
 	ResourceID  string  `json:"resourceId"`
 	Reason      string  `json:"reason"`
 	DurationHrs float64 `json:"durationHours"`
+	Approver    string  `json:"approver"`
 }
 
 const PORT = "8080"
@@ -137,8 +138,17 @@ func (s *server) handleCreateLease(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	approverID := uuid.Nil
+	if req.Approver != "" {
+		approverID, err = fromStatelyUUID(req.Approver)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Invalid resource ID format %s", err.Error()), http.StatusBadRequest)
+			return
+		}
+	}
+
 	lease, err := s.client.CreateLease(r.Context(), userID, resourceID, req.Reason,
-		time.Duration(req.DurationHrs*float64(time.Hour)))
+		time.Duration(req.DurationHrs*float64(time.Hour)), approverID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
