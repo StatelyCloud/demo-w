@@ -194,7 +194,7 @@ curl -X POST http://$DEMO2_HOST/users \
   -d '{"email":"sam@example.com", "name":"Sam Manager"}'
 
 # Create a lease
-curl -X POST http://$DEMO2_HOST/leases \
+curl -X POST http://$DEMO_HOST/leases \
   -H "Content-Type: application/json" \
   -d '{
     "userId": "FY4wCvQLT9ycXM0jmv3nTg==",
@@ -203,9 +203,8 @@ curl -X POST http://$DEMO2_HOST/leases \
     "durationHours": 0.5
   }'
 
-# Get leases for a user (replace UUID with actual user ID)
-curl http://$DEMO2_HOST/users/FY4wCvQLT9ycXM0jmv3nTg==
-
-# Get leases for a resource (replace UUID with actual resource ID)
-curl http://$DEMO2_HOST/resources/uBrp9ZP8SR6WvcKYL8WCLg== | jq
+# Get leases for a user from V1 service
+curl http://$DEMO_HOST/users/FY4wCvQLT9ycXM0jmv3nTg== | jq
+# Get leases for a user from V2 service
+curl http://$DEMO2_HOST/users/FY4wCvQLT9ycXM0jmv3nTg== | jq
 ```
