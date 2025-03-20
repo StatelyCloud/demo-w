@@ -16,7 +16,7 @@ stately schema init ./schema-v1
 
 ## Step 2: Build a Schema
 
-See `schema-v1/schema.ts`. This is a simple model for a permissions lease system.
+See `schema-v1/stately.ts`. This is a simple model for a permissions lease system.
 
 * It leverages a single table design to store users, resources, and leases in a single store.
 * Key paths are chosen to allow for:
@@ -31,7 +31,7 @@ See `schema-v1/schema.ts`. This is a simple model for a permissions lease system
 go mod init github.com/StatelyCloud/demo-w
 
 # Generate preview code to see what it looks like
-stately schema generate -l go --preview schema-v1/schema.ts pkg/schema
+stately schema generate -l go --preview schema-v1/stately.ts pkg/schema
 
 # Run mod tidy to "install" all the dependencies
 go mod tidy
@@ -97,14 +97,14 @@ As a comparison we've also implemented a similar client in `pkg/ddb` that does t
 3. In the Console, click "New Store", select BYOC and provide the table ARN from above.
 4. Copy the store ID and schema ID:
    ```sh
-   export STATELY_STORE_ID=4811130409281414
-   export STATELY_SCHEMA_ID=4291558376530788
+   export STORE_ID=4811130409281414
+   export SCHEMA_ID=4291558376530788
    ```
 5. Create an Access Key with the type "Data Plane Key for BYOC" and copy the key string.
 6. Put your schema:
    ```sh
-   stately schema put -s $STATELY_SCHEMA_ID schema-v1/schema.ts
-   stately schema generate -l go -v 1 -s $STATELY_SCHEMA_ID pkg/schema
+   stately schema put -s $SCHEMA_ID schema-v1/stately.ts
+   stately schema generate -l go -v 1 -s $SCHEMA_ID pkg/schema
    ```
 
 ## Step 5: Set up Kubernetes
@@ -124,7 +124,7 @@ As a comparison we've also implemented a similar client in `pkg/ddb` that does t
        ```
 2. Create a k8s secret for the access key:
    ```sh
-   kubectl create secret generic demo-w-secret --from-literal=STATELY_ACCESS_KEY="$STATELY_ACCESS_KEY"
+   kubectl create secret generic demo-w-secret --from-literal=STATELY_ACCESS_KEY="$ACCESS_KEY"
    ```
 3. Push your service container and create the deployment and loadbalancer using `k8s/deployment.yaml`:
    ```sh
@@ -142,7 +142,7 @@ export DEMO_HOST="ac049c19b626845c9a3f9cc15ae94220-2137334291.us-west-2.elb.amaz
 # Create a user
 curl -X POST http://$DEMO_HOST/users \
   -H "Content-Type: application/json" \
-  -d '{"email":"john@example.com", "name":"John Doe"}'
+  -d '{"email":"john2@example.com", "name":"John Doe"}'
 
 # Create a resource
 curl -X POST http://$DEMO_HOST/resources \
@@ -170,18 +170,18 @@ Replace `localhost:8080` with your actual service URL if deploying to Kubernetes
 
 ## Step 7: Updating schema
 
-1. In `schema-v2/schema.ts` we've renamed some fields and added an approver.
+1. In `schema-v2/stately.ts` we've renamed some fields and added an approver.
 2. Publish a new version of the schema:
    ```sh
-   stately schema put -s $STATELY_SCHEMA_ID schema-v2/schema.ts
-   stately schema generate -l go -v 2 -s $STATELY_SCHEMA_ID pkg/schema
+   stately schema put -s $SCHEMA_ID schema-v2/stately.ts
+   stately schema generate -l go -v 2 -s $SCHEMA_ID pkg/schema
    ```
 3. Validate that the original service is still returning the old shapes
 4. Publish a new version of the service
 5. Show that the cURL commands return the new shape
 6. TODO: how to keep the old version around? Maybe just have a separate deployment?
 
-## Step 6: Try out our service at V2
+## Step 8: Try out our service at V2
 
 Test the service with these curl commands:
 
@@ -194,7 +194,7 @@ curl -X POST http://$DEMO2_HOST/users \
   -d '{"email":"sam@example.com", "name":"Sam Manager"}'
 
 # Create a lease
-curl -X POST http://$DEMO_HOST/leases \
+curl -X POST http://$DEMO2_HOST/leases \
   -H "Content-Type: application/json" \
   -d '{
     "userId": "FY4wCvQLT9ycXM0jmv3nTg==",

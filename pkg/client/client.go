@@ -75,6 +75,10 @@ func (c *Client) GetLeasesForUser(ctx context.Context, userID uuid.UUID) ([]*sch
 			leases = append(leases, lease)
 		}
 	}
+	_, err = resp.Token()
+	if err != nil {
+		return nil, err
+	}
 	return leases, nil
 }
 
@@ -88,6 +92,10 @@ func (c *Client) GetLeasesForResource(ctx context.Context, resourceID uuid.UUID)
 		if lease, ok := resp.Value().(*schema.Lease); ok {
 			leases = append(leases, lease)
 		}
+	}
+	_, err = resp.Token()
+	if err != nil {
+		return nil, err
 	}
 	return leases, nil
 }

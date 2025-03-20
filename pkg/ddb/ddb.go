@@ -359,6 +359,12 @@ func (c *DynamoDBClient) GetLeasesForResource(ctx context.Context, resourceID uu
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal lease: %w", err)
 		}
+
+		// Skip expired leases
+		if lease.TTL <= time.Now().Unix() {
+			continue
+		}
+
 		leases = append(leases, &lease)
 	}
 
